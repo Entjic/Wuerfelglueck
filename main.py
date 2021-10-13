@@ -29,12 +29,10 @@ def simulate_game(pair):
     team0 = Team(0, dice0)
     team1 = Team(1, dice1)
     while True:
-        if has_won(team0):
-            # or not_possible_to_win_anymore(team1, dice1)
+        if has_won(team0) or not possible_to_bring_next_stone_home(team1):
             return dice0.identifier
         team0.turn(team1)
-        if has_won(team1):
-            # or not_possible_to_win_anymore(team0, dice0):
+        if has_won(team1) or not possible_to_bring_next_stone_home(team0):
             return dice1.identifier
         team1.turn(team0)
 
@@ -47,39 +45,72 @@ def has_won(team):
     return counter == 4
 
 
-def not_possible_to_win_anymore(team, dice):
-    # todo check if team cannot win due to too high nr on their dice while being close to their home
-    # fixme this shit does not work at all :(
-    for stone in team.stones:
-        if not can_be_brought_home(stone, dice, find_farthest_taken_position(team)):
-            return True
-    return False
-
-
-def find_farthest_taken_position(team):
-    value = 44
-    if team.spot_blocked(43):
-        value -= 1
-        if team.spot_blocked(42):
-            value -= 1
-            if team.spot_blocked(41):
-                value -= 1
-    return value
-
-
-def can_be_brought_home(stone, dice, farthest_taken_position):
-    if stone.position >= farthest_taken_position:
+def possible_to_bring_next_stone_home(team):
+    stones_that_are_not_already_home = get_stones_that_are_not_already_home_sorted_by_size_down(team)
+    if len(stones_that_are_not_already_home) == 0:
         return True
+    stone_to_check = stones_that_are_not_already_home.__getitem__(0)
+    val = can_be_brought_home(stone_to_check, team.dice, get_spot_to_target(team))
+    # if not val:
+    #     print("ITS NOT POSSIBLE TO WIN THE GAME IN THIS POSITION ANY LONGER FOR TEAM " + str(team.identifier)
+    #           + " WITH DICE " + team.dice.info())
+    return val
 
+
+def can_be_brought_home(stone, dice, target_home_position):
     for side in dice.sides:
-        if int(side) + int(stone.position) < farthest_taken_position:
+        if side == 0:
+            continue
+        if side <= (target_home_position - stone.position):
             return True
     return False
+
+
+def get_stones_that_are_not_already_home_sorted_by_size_down(team):
+    sorted_stones = get_stones_sorted(team)
+
+    last_taken_spot = 43
+    stones_that_are_not_already_home = []
+
+    for stone in sorted_stones:
+        if stone.position == last_taken_spot:
+            last_taken_spot -= 1
+        else:
+            stones_that_are_not_already_home.append(stone)
+
+    return stones_that_are_not_already_home
+
+
+def get_spot_to_target(team):
+    sorted_stones = get_stones_sorted(team)
+
+    spot_to_target = 43
+    for stone in sorted_stones:
+        if stone.position == spot_to_target:
+            spot_to_target -= 1
+
+    return spot_to_target
+
+
+def get_stones_sorted(team):
+    sorted_stones = []
+    for stone in team.stones:
+        sorted_stones.append(stone)
+    sorted_stones.sort(key=lambda s: s.position, reverse=True)
+    return sorted_stones
+
+
+def get_smallest_side_of_dice(dice):
+    smallest = 0
+    for side in dice.sides:
+        if side > smallest:
+            smallest = side
+    return smallest
 
 
 def impossible_to_win(dice):
     for side in dice.sides:
-        if int(side) == 6:
+        if side == 6:
             return False
     return True
 
@@ -108,27 +139,23 @@ def create_all_possible_combinations(dices):
     return tuples
 
 
-if __name__ == '__main__':
-    print("simulation started")
-    dices_read = read_dices_from_file(2)
-
-    amount_of_simulations = 1000
+def simulate_all_dices():
+    print(f'simulation for file {str(file_number)} started')
+    dices_read = read_dices_from_file(file_number)
     pairs_to_play = create_all_possible_combinations(dices_read)
-
     amount_of_wins = []
-
     for i in range(amount_of_simulations):
         for pair in pairs_to_play:
             # print(f'Pair {counter} dice {pair.__getitem__(0).identifier}: ' + pair.__getitem__(0).info())
             # print(f'Pair {counter} dice {pair.__getitem__(1).identifier}: ' + pair.__getitem__(1).info())
             winning = simulate(pair)
+            # print("--GAME-OVER--")
+            # print(f'winning dice was {str(winning)}')
             # print(winning)
             # print(collections.Counter(rolled).values())
-            rolled = []
             # print(winning)
             amount_of_wins.append(winning)
             # print(collections.Counter(amount_of_wins))
-
     print("Final : " + str(collections.Counter(amount_of_wins)))
     # for pair in pairs_to_play:
     #     print(f'Dice 0: {pair.__getitem__(0).identifier}')
@@ -136,3 +163,9 @@ if __name__ == '__main__':
     #     print('---')
     print(f'Played Games: {amount_of_simulations * len(pairs_to_play)}')
     # simulate_dice(dices_read[2])
+
+
+if __name__ == '__main__':
+    file_number = 5
+    amount_of_simulations = 1000
+    simulate_all_dices()

@@ -7,22 +7,17 @@ class Team:
         self.dice = dice
         self.stones = Stone(identifier, 0), Stone(identifier, 1), Stone(identifier, 2), Stone(identifier, 3)
 
-    def spawn(self):
-        for stone in self.stones:
-            if stone.position == -1:
-                stone.spawn()
-
     def roll_dice(self):
         return self.dice.roll_dice()
 
     def turn(self, enemy):
-        score = int(self.roll_dice())
-        # print(score)
+        score = self.roll_dice()
+        # print(f'Team {self.identifier} scored a {score}')
         if score == 6:
             # print('rolled 6')
             if self.can_spawn_new_stone():
                 # print("use 6 to spawn")
-                self.spawn_new_stone()
+                self.spawn_new_stone(enemy)
                 # self.print_debug()
             else:
                 # print("use 6 as move")
@@ -36,8 +31,10 @@ class Team:
 
     def handle_move(self, score, enemy):
         stone = self.get_farthest_away_movable_stone(score)
-        if self.is_spawn_blocked():
+        if self.is_spawn_blocked() and not self.all_stones_in_use():
             stone = self.get_closest_movable_stone(score)
+            # todo think about if this is the right mechanic, maybe next movable farthest away stone?
+            # fixme next blocking stone needs to be moved!
         if stone is None:
             # print("No valid stone could be found")
             return
@@ -45,6 +42,12 @@ class Team:
         if enemy.conflicts_other_team_stone(stone):
             # print("kick enemy stone on position " + str(stone.position))
             enemy.get_conflicted_stone_other_team(stone).position = -1
+
+    def all_stones_in_use(self):
+        for stone in self.stones:
+            if stone.position == -1:
+                return False
+        return True
 
     def get_farthest_away_movable_stone(self, score):
         farthest = None
@@ -85,19 +88,19 @@ class Team:
                 return True
         return False
 
-    def get_stone_on_spot(self, spot):
-        for stone in self.stones:
-            if stone.position == spot:
-                return stone
-        return None
-
-    def spawn_new_stone(self):
+    def spawn_new_stone(self, enemy):
         for stone in self.stones:
             if stone.position == -1:
                 stone.spawn()
+                if enemy.conflicts_other_team_stone(stone):
+                    # print("kick enemy stone on position " + str(stone.position))
+                    enemy.get_conflicted_stone_other_team(stone).position = -1
                 return
 
     def conflicts_other_team_stone(self, stone):
+        if stone.position >= 40:
+            return False
+
         for s in self.stones:
 
             if s.position >= 40:
@@ -106,17 +109,19 @@ class Team:
             if s.position < 0:
                 continue
 
-            if int(s.position) == int(stone.position):
+            if s.position == stone.position:
                 continue
 
-            relative_position_self = int(s.position) % 20
-            relative_position_enemy = int(stone.position) % 20
+            relative_position_self = s.position % 20
+            relative_position_enemy = stone.position % 20
 
             if relative_position_self == relative_position_enemy:
                 return True
         return False
 
     def get_conflicted_stone_other_team(self, stone):
+        if stone.position >= 40:
+            return False
 
         for s in self.stones:
 
@@ -126,11 +131,11 @@ class Team:
             if s.position < 0:
                 continue
 
-            if int(s.position) == int(stone.position):
+            if s.position == stone.position:
                 continue
 
-            relative_position_self = int(s.position) % 20
-            relative_position_enemy = int(stone.position) % 20
+            relative_position_self = s.position % 20
+            relative_position_enemy = stone.position % 20
 
             if relative_position_self == relative_position_enemy:
                 return s

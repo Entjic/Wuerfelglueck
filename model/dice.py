@@ -4,7 +4,9 @@ import random
 class Dice:
     def __init__(self, amount_of_sides, sides, identifier):
         self.amount_of_sides = amount_of_sides
-        self.sides = sides
+        self.sides = []
+        for side in sides:
+            self.sides.append(int(side))
         self.identifier = identifier
 
     def roll_dice(self):
