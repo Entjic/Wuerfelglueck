@@ -30,11 +30,7 @@ class Team:
         # self.print_debug()
 
     def handle_move(self, score, enemy):
-        stone = self.get_farthest_away_movable_stone(score)
-        if self.is_spawn_blocked() and not self.all_stones_in_use():
-            stone = self.get_closest_movable_stone(score)
-            # todo think about if this is the right mechanic, maybe next movable farthest away stone?
-            # fixme next blocking stone needs to be moved!
+        stone = self.determine_stone_to_move(score)
         if stone is None:
             # print("No valid stone could be found")
             return
@@ -48,6 +44,13 @@ class Team:
             if stone.position == -1:
                 return False
         return True
+
+    def determine_stone_to_move(self, score):
+        stone = self.get_farthest_away_movable_stone(score)
+        if self.is_spawn_blocked() and not self.all_stones_in_use():
+            if self.can_move(self.get_stone(0), score):
+                stone = self.get_stone(0)
+        return stone
 
     def get_farthest_away_movable_stone(self, score):
         farthest = None
@@ -69,18 +72,6 @@ class Team:
 
     def is_spawn_blocked(self):
         return self.spot_blocked(0)
-
-    def get_stone_to_unblock_spawn(self, score):
-        return self.get_closest_movable_stone(score)
-
-    def get_closest_movable_stone(self, score):
-        closest = None
-        for stone in self.stones:
-            if not self.can_move(stone, score):
-                continue
-            if closest is None or closest.position > stone.position:
-                closest = stone
-        return closest
 
     def spot_blocked(self, spot):
         for stone in self.stones:
@@ -146,6 +137,12 @@ class Team:
             return False
         # print(stone.info() + " is on board")
         return not self.will_conflicts_other_stone(stone, score)
+
+    def get_stone(self, position):
+        for stone in self.stones:
+            if stone.position == position:
+                return stone
+        return None
 
     def will_conflicts_other_stone(self, stone, score):
         for s in self.stones:

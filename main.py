@@ -2,6 +2,7 @@ import collections
 
 from model.dice import Dice
 from model.team import Team
+import time
 
 
 def turn(dice):
@@ -166,6 +167,9 @@ def simulate_all_dices():
 
 
 if __name__ == '__main__':
-    file_number = 5
-    amount_of_simulations = 1000
+    file_number = 2
+    amount_of_simulations = 10000
+    start = time.time()
+    print(start)
     simulate_all_dices()
+    print(time.time() - start)
