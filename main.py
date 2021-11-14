@@ -168,7 +168,7 @@ def simulate_all_dices():
 
 if __name__ == '__main__':
     file_number = 2
-    amount_of_simulations = 10000
+    amount_of_simulations = 1
     start = time.time()
     print(start)
     simulate_all_dices()
